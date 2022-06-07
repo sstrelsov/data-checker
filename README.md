@@ -1,5 +1,5 @@
 # Law Firm Data Verification Script
-Jupyter Notebook for verifying quality of contractor-entered law firm data.
+Jupyter Notebook for verifying quality of contractor-entered law firm data. Allows for dynamic verification. Randomly selects a user-specified number of entries to allow for efficient verification of data quality.
 
 ## Setup
 ### Required Packages
