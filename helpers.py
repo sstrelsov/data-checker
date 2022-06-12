@@ -1,9 +1,8 @@
 import pandas as pd
-import numpy as np
 import random
 from gspread_formatting import *
-import gspread
 from time import localtime, strftime
+from gspread_pandas import Spread
 
 stamp_format = cellFormat(
     backgroundColor=color(1, 0.9, 0.9),

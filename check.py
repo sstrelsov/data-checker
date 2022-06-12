@@ -1,23 +1,25 @@
-import sys
-from gspread_pandas import Spread, Client
-import gspread
+from gspread_pandas import Spread
 from gspread_formatting import *
 from helpers import create_input_sheet_dict, create_output
-from input_data import get_input_data
+import argparse
+from arg_parsing import *
 
-# Authenticate Google Sheets
-gc = gspread.oauth()
+# Parse through command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('-i', type=check_input_type, nargs='+', required=True, help=input_help)
+parser.add_argument('-o', type=str, required=True, help=output_help)
+parser.add_argument('--sample', type=int, required=True, help=sample_help)
+args=parser.parse_args()
 
-# Check for command line arguments
-input_spreadsheet_names = get_input_data(sys.argv, gc)
+# Flatten list of inputs
+args.i = [sheet for sub_lst in args.i for sheet in sub_lst]
 
-# Get input and output spreadsheet names, open output spreadsheet
-output_sheet_name = input("Enter name of output spreadsheet: ")
-entries_per_sample = int(input("Enter the number of samples to be taken per input sheet: "))
-num_samples = int(input("Enter the number of times to randomly select the number of samples: "))
+# TODO
+## Create new spreadsheet from output string if it doesn't exist
+## Open output spreadsheet if it does exist (do all of these things in the helper functions)
+output_spreadsheet_name = Spread(args.o)
+output_gspread = gc.open(output_spreadsheet_name)
 
-output_spreadsheet_name = Spread(output_sheet_name)
-output_gspread = gc.open(output_sheet_name)
-
-clean_input_data = create_input_sheet_dict(input_spreadsheet_names)
-create_output(clean_input_data,output_sheet_name,entries_per_sample,num_samples)
+# Clean input and generate output
+input_dict = create_input_sheet_dict(args.i)
+create_output(input_dict,args.o,args.sample)
