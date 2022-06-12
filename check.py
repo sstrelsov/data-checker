@@ -1,25 +1,23 @@
-from gspread_pandas import Spread
-from gspread_formatting import *
-from helpers import create_input_sheet_dict, create_output
-import argparse
-from arg_parsing import *
+""" Argument Parsing Module """
+import argparse as ap
+from helpers import create_input_sheet_dict,create_output, spread_exists
+from arg_parsing import check_input_type,INPUT_HELP,OUTPUT_HELP,SAMPLE_HELP
 
 # Parse through command line arguments
-parser = argparse.ArgumentParser()
-parser.add_argument('-i', type=check_input_type, nargs='+', required=True, help=input_help)
-parser.add_argument('-o', type=str, required=True, help=output_help)
-parser.add_argument('--sample', type=int, required=True, help=sample_help)
+parser = ap.ArgumentParser()
+parser.add_argument('-i', type=check_input_type, nargs='+', required=True, help=INPUT_HELP)
+parser.add_argument('-o', type=str, required=True, help=OUTPUT_HELP)
+parser.add_argument('--sample', type=int, required=True, help=SAMPLE_HELP)
 args=parser.parse_args()
 
 # Flatten list of inputs
 args.i = [sheet for sub_lst in args.i for sheet in sub_lst]
 
-# TODO
-## Create new spreadsheet from output string if it doesn't exist
-## Open output spreadsheet if it does exist (do all of these things in the helper functions)
-output_spreadsheet_name = Spread(args.o)
-output_gspread = gc.open(output_spreadsheet_name)
-
-# Clean input and generate output
+# Create dictionary of pandas dataframes and urls from input
 input_dict = create_input_sheet_dict(args.i)
+
+# Create output
 create_output(input_dict,args.o,args.sample)
+
+# TODO
+# Let user specify where to save output file
