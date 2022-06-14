@@ -1,5 +1,6 @@
 """Package to generate random numbers to select a random sample of data"""
 import random
+import sys
 from time import localtime, strftime
 import pandas as pd
 import gspread_formatting as gsf
@@ -56,15 +57,15 @@ def format_header(sheet):
 
 def get_gspread_data(spread_names):
     """Creates dictionary from key name of input sheet. Values are df and spreadsheet url."""
-    gspread_data = {}
+    spread_data = {}
     for spread_name in spread_names:
         key_name = spread_name[0:7]
-        gspread = gc.open(spread_name)
-        gspread_data[key_name] = {
+        spread = gc.open(spread_name)
+        spread_data[key_name] = {
             "df": Spread(spread_name).sheet_to_df(),
-            "url": f"https://docs.google.com/spreadsheets/d/{gspread.id}"
+            "url": f"https://docs.google.com/spreadsheets/d/{spread.id}"
             }
-    return gspread_data
+    return spread_data
 
 def build_pandas_df(pandas_df,sample_size):
     """Returns a pandas dataframe with a specified random sample of the input dataframe"""
@@ -79,14 +80,27 @@ def build_pandas_df(pandas_df,sample_size):
         return data_frame
     return None
 
+def create_gspread(name):
+    """Helper func creates output spread if doesn't already exist"""
+    if not spread_exists(name):
+        folder_id = input("Enter ID of folder to place new spreadsheet: ")
+        # If no folder_id entered, simply create and open new spread
+        if folder_id == "":
+            spread = gc.create(name)
+            spread = gc.open(name)
+            return spread
+        spread = gc.create(name,folder_id)
+        spread = gc.open(name,folder_id)
+        return spread
+    return gc.open(name)
+
 def build_output(input_gspreads, output_gspread_name, sample_size):
     """Outputs Google Spreadsheet with sheets containging random samples of input spreads."""
-    # Create output sheet if it doesn't exist
-    if not spread_exists(output_gspread_name):
-        spread = gc.create(output_gspread_name)
-    pandas_spread = Spread(output_gspread_name)
     # Open output gspread to allow for gpsread_formatting package to format header
-    spread = gc.open(output_gspread_name)
+    spread = create_gspread(output_gspread_name)
+    pandas_spread = Spread(output_gspread_name)
+
+    # Iterate through input spreadsheets to output random samples
     for input_spread_name,values in input_gspreads.items():
         try:
             pandas_spread.df_to_sheet(
@@ -98,9 +112,8 @@ def build_output(input_gspreads, output_gspread_name, sample_size):
             )
         except AttributeError:
             print("[DF_TO_SHEET] Error loading Pandas dataframe.")
-            exit()
-        sheet = spread.worksheet(input_spread_name)
+            sys.exit()
         stamp_output(pandas_spread,values["url"])
-        format_header(sheet)
+        format_header(spread.worksheet(input_spread_name))
         print(f"Sheet {input_spread_name} uploaded successfully.")
     print(f"SUCCESS. Outputs: https://docs.google.com/spreadsheets/d/{spread.id}")

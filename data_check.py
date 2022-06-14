@@ -18,7 +18,3 @@ input_dict = get_gspread_data(args.i)
 
 # Create output
 build_output(input_dict,args.o,args.sample)
-
-# TODO
-# Let user specify where to save output file
-# Make naming consistent. Spread and Sheet should be consistent throughout
