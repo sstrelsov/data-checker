@@ -1,3 +1,4 @@
+"""Package to generate random numbers to select a random sample of data"""
 import random
 from time import localtime, strftime
 import pandas as pd
@@ -53,44 +54,53 @@ def format_header(sheet):
         )
     )
 
-def create_input_sheet_dict(sheet_names):
+def get_gspread_data(spread_names):
     """Creates dictionary from key name of input sheet. Values are df and spreadsheet url."""
-    gsheets_dict = {}
-    for sheet_name in sheet_names:
-        key_name = sheet_name[0:7]
-        gsheet = gc.open(sheet_name)
-        gsheets_dict[key_name] = {
-            "df": Spread(sheet_name).sheet_to_df(),
-            "url": f"https://docs.google.com/spreadsheets/d/{gsheet.id}"
+    gspread_data = {}
+    for spread_name in spread_names:
+        key_name = spread_name[0:7]
+        gspread = gc.open(spread_name)
+        gspread_data[key_name] = {
+            "df": Spread(spread_name).sheet_to_df(),
+            "url": f"https://docs.google.com/spreadsheets/d/{gspread.id}"
             }
-    return gsheets_dict
+    return gspread_data
 
-def create_output(input_gspreads_dict, output_gspread_name, sample_size):
-    """Iterates through list of input spreads to output a sample of each spread to different sheets in the output spread"""
+def build_pandas_df(pandas_df,sample_size):
+    """Returns a pandas dataframe with a specified random sample of the input dataframe"""
+    firm_indices = []
+    data_frame = pd.DataFrame(pandas_df)
+    firm_indices = list(set(data_frame.index.values.tolist()))
+    while "" in firm_indices:
+        firm_indices.remove("")
+    if len(firm_indices) >= sample_size:
+        firm_indices = random.sample(firm_indices, sample_size)
+        data_frame = data_frame.loc[firm_indices]
+        return data_frame
+    return None
+
+def build_output(input_gspreads, output_gspread_name, sample_size):
+    """Outputs Google Spreadsheet with sheets containging random samples of input spreads."""
     # Create output sheet if it doesn't exist
     if not spread_exists(output_gspread_name):
         spread = gc.create(output_gspread_name)
     pandas_spread = Spread(output_gspread_name)
     # Open output gspread to allow for gpsread_formatting package to format header
     spread = gc.open(output_gspread_name)
-    for input_spread_name,values in input_gspreads_dict.items():
-        firm_indices = []
-        data_frame = pd.DataFrame(values["df"])
-        firm_indices = list(set(data_frame.index.values.tolist()))
-        while("" in firm_indices):
-            firm_indices.remove("")
-        if len(firm_indices) >= sample_size:
-            firm_indices = random.sample(firm_indices, sample_size)
-            data_frame = data_frame.loc[firm_indices]
+    for input_spread_name,values in input_gspreads.items():
+        try:
             pandas_spread.df_to_sheet(
-                    data_frame,
-                    index=True,
-                    start='A2',
-                    sheet=input_spread_name,
-                    freeze_headers=True,
-                    )
-            sheet = spread.worksheet(input_spread_name)
-            stamp_output(pandas_spread,values["url"])
-            format_header(sheet)
-            print(f"Sheet {input_spread_name} uploaded successfully.")
-    print(f"All sheets loaded successfully. Outputs: https://docs.google.com/spreadsheets/d/{spread.id}")
+                build_pandas_df(values['df'],sample_size),
+                index=True,
+                start='A2',
+                sheet=input_spread_name,
+                freeze_headers=True,
+            )
+        except AttributeError:
+            print("[DF_TO_SHEET] Error loading Pandas dataframe.")
+            exit()
+        sheet = spread.worksheet(input_spread_name)
+        stamp_output(pandas_spread,values["url"])
+        format_header(sheet)
+        print(f"Sheet {input_spread_name} uploaded successfully.")
+    print(f"SUCCESS. Outputs: https://docs.google.com/spreadsheets/d/{spread.id}")
