@@ -26,7 +26,7 @@ def stamp_output(output_gspread,input_gspread_url):
     # Gets current time
     current_time = str(strftime("%Y-%m-%d %H:%M:%S",localtime()))
     # Gets hyperlink of input gspread url
-    hyperlink = '=HYPERLINK("'+input_gspread_url+'","Link to Original")'
+    hyperlink = '=HYPERLINK("'+input_gspread_url+'","Link to Original Data Entries")'
     # Update header contents of gspread output
     output_gspread.update_cells(
         "A1",
@@ -35,6 +35,7 @@ def stamp_output(output_gspread,input_gspread_url):
     )
 
 def format_header(sheet):
+    """Formats the header to have a pink background, center alignment, and a bolded header row"""
     # Resize all columns to fit content width
     sheet.columns_auto_resize(0,sheet.col_count)
     # Format the specified gsheet in the output gspread, adding background and alignment
